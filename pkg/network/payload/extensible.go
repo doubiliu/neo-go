@@ -2,7 +2,6 @@ package payload
 
 import (
 	"errors"
-	"math"
 
 	"github.com/nspcc-dev/neo-go/pkg/config/netmode"
 	"github.com/nspcc-dev/neo-go/pkg/core/transaction"
@@ -13,7 +12,7 @@ import (
 
 const (
 	maxExtensibleCategorySize = 32
-	maxExtensibleDataSize     = math.MaxUint16
+	maxExtensibleDataSize     = MaxSize
 )
 
 // Extensible represents payload containing arbitrary data.
