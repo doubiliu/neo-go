@@ -9,6 +9,7 @@ import (
 	"github.com/nspcc-dev/neo-go/pkg/config/netmode"
 	"github.com/nspcc-dev/neo-go/pkg/core/fee"
 	"github.com/nspcc-dev/neo-go/pkg/core/native/nativenames"
+	"github.com/nspcc-dev/neo-go/pkg/core/native/recordtypes"
 	"github.com/nspcc-dev/neo-go/pkg/core/transaction"
 	"github.com/nspcc-dev/neo-go/pkg/crypto/hash"
 	"github.com/nspcc-dev/neo-go/pkg/crypto/keys"
@@ -532,5 +533,37 @@ func TestClient_NEP11(t *testing.T) {
 	t.Run("Transfer", func(t *testing.T) {
 		_, err := c.TransferNEP11(wallet.NewAccountFromPrivateKey(testchain.PrivateKeyByID(0)), testchain.PrivateKeyByID(1).GetScriptHash(), h, "neo.com", 0)
 		require.NoError(t, err)
+	})
+}
+
+func TestClient_NNS(t *testing.T) {
+	chain, rpcSrv, httpSrv := initServerWithInMemoryChain(t)
+	defer chain.Close()
+	defer rpcSrv.Shutdown()
+
+	c, err := client.New(context.Background(), httpSrv.URL, client.Options{})
+	require.NoError(t, err)
+	require.NoError(t, c.Init())
+
+	t.Run("IsAvailable, false", func(t *testing.T) {
+		b, err := c.IsAvailable("neo.com")
+		require.NoError(t, err)
+		require.Equal(t, false, b)
+	})
+	t.Run("IsAvailable, true", func(t *testing.T) {
+		b, err := c.IsAvailable("neogo.com")
+		require.NoError(t, err)
+		require.Equal(t, true, b)
+	})
+	t.Run("Resolve, good", func(t *testing.T) {
+		b, err := c.Resolve("neo.com", recordtypes.A)
+		require.NoError(t, err)
+		require.Equal(t, "1.2.3.4", b)
+
+	})
+	t.Run("Resolve, bad", func(t *testing.T) {
+		_, err := c.Resolve("neogo.com", recordtypes.A)
+		require.Error(t, err)
+
 	})
 }
