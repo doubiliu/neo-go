@@ -35,7 +35,7 @@ func (s *service) AddSignature(height uint32, validatorIndex int32, sig []byte) 
 
 	incRoot.Lock()
 	if incRoot.root != nil {
-		ok := pub.Verify(sig, incRoot.root.GetSignedHash().BytesBE())
+		ok := pub.VerifyHashable(sig, uint32(s.Network), incRoot.root)
 		if !ok {
 			incRoot.Unlock()
 			return fmt.Errorf("invalid state root signature for %d", validatorIndex)
@@ -74,7 +74,7 @@ func (s *service) getIncompleteRoot(height uint32) *incompleteRoot {
 func (s *service) sendValidatedRoot(r *state.MPTRoot) {
 	priv := s.getAccount().PrivateKey()
 	w := io.NewBufBinWriter()
-	m := NewMessage(s.Network, RootT, r)
+	m := NewMessage(RootT, r)
 	m.EncodeBinary(w.BinWriter)
 	ep := &payload.Extensible{
 		ValidBlockStart: r.Index,
