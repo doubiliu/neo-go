@@ -9,6 +9,7 @@ import (
 	"github.com/nspcc-dev/neo-go/pkg/core/transaction"
 	"github.com/nspcc-dev/neo-go/pkg/io"
 	"github.com/nspcc-dev/neo-go/pkg/network/payload"
+	"github.com/nspcc-dev/neo-go/pkg/vm/emit"
 	"go.uber.org/zap"
 )
 
@@ -71,6 +72,7 @@ func (s *service) getIncompleteRoot(height uint32) *incompleteRoot {
 }
 
 func (s *service) sendValidatedRoot(r *state.MPTRoot) {
+	priv := s.getAccount().PrivateKey()
 	w := io.NewBufBinWriter()
 	m := NewMessage(s.Network, RootT, r)
 	m.EncodeBinary(w.BinWriter)
@@ -78,9 +80,16 @@ func (s *service) sendValidatedRoot(r *state.MPTRoot) {
 		Network:         s.Network,
 		ValidBlockStart: r.Index,
 		ValidBlockEnd:   r.Index + transaction.MaxValidUntilBlockIncrement,
-		Sender:          s.getAccount().PrivateKey().GetScriptHash(),
+		Sender:          priv.GetScriptHash(),
 		Data:            w.Bytes(),
+		Witness: transaction.Witness{
+			VerificationScript: s.getAccount().GetVerificationScript(),
+		},
 	}
+	sig := priv.SignHash(ep.GetSignedHash())
+	buf := io.NewBufBinWriter()
+	emit.Bytes(buf.BinWriter, sig)
+	ep.Witness.InvocationScript = buf.Bytes()
 	s.getRelayCallback()(ep)
 }
 
