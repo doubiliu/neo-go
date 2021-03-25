@@ -307,11 +307,12 @@ func TestAddNetworkFeeCalculateNetworkFee(t *testing.T) {
 					Scopes:  transaction.CalledByEntry,
 				},
 				{
-					Account: util.Uint160{},
+					Account: util.Uint160{}, // there's no such contract in chain, but it's OK for (s *Server).calculateNetworkFee
 					Scopes:  transaction.Global,
 				},
 			}
-			require.Error(t, c.AddNetworkFee(tx, 10, acc0, acc1))
+			require.NoError(t, c.AddNetworkFee(tx, extraFee, acc0, acc1))
+			require.True(t, tx.NetworkFee > extraFee)
 		})
 	})
 }
